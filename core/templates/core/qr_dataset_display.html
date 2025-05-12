@@ -1,0 +1,141 @@
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+{% block title %}Public Dataset - {{ dataset.name }}{% endblock %}
+{% block content %}
+<div class="container d-flex flex-column align-items-center justify-content-center" style="min-height:70vh;">
+    <div class="card p-4 shadow" style="max-width:520px;width:100%;">
+        <h2 class="mb-3 text-center">Public Dataset</h2>
+        <div class="mb-3 text-center">
+            <b>{{ dataset.name }}</b><br>
+            <span class="text-secondary">Uploaded by: {{ dataset.user.username }}</span><br>
+            <span class="text-secondary">Uploaded at: {{ dataset.uploaded_at|date:'Y-m-d H:i' }}</span>
+        </div>
+        <div class="mb-2">
+            <b>Schema:</b><br>
+            <code style="word-break:break-all;">{{ dataset.schema }}</code>
+        </div>
+        {% if chart_data and not chart_error %}
+        <div class="mb-3">
+            <b>Chart Preview:</b>
+            <div class="chart-container mb-2" style="background:#222; border-radius:8px; padding:12px;">
+                <canvas id="dataset-chart" style="max-width:100%;min-height:260px;"></canvas>
+            </div>
+        </div>
+        {% elif chart_error %}
+        <div class="alert alert-warning">{{ chart_error }}</div>
+        {% endif %}
+        {% if columns and sample_rows %}
+        <div class="mb-3">
+            <b>Sample Data:</b>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered table-dark">
+                    <thead>
+                        <tr>
+                            {% for col in columns %}
+                            <th>{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in sample_rows %}
+                        <tr>
+                            {% for col in columns %}
+                            <td>{{ row|get_item:col|default:'' }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        <div class="mb-2">
+            <b>Description:</b><br>
+            <span>{{ dataset.ai_summary|default:'No summary.' }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function() {
+    const chartData = {{ chart_data|safe }};
+    const chartType = '{{ chart_type|default:'bar' }}';
+    if (chartData && chartData.data && Array.isArray(chartData.data)) {
+        const ctx = document.getElementById('dataset-chart').getContext('2d');
+        let bgColors = [];
+        let borderColors = [];
+        const colorPalette = [
+            '#377eb8', '#e41a1c', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'
+        ];
+        for (let i = 0; i < chartData.data.length; i++) {
+            bgColors.push(colorPalette[i % colorPalette.length]);
+            borderColors.push(colorPalette[i % colorPalette.length]);
+        }
+        let config = {
+            type: chartType,
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: chartData.dataset_label || '',
+                    data: chartData.data,
+                    backgroundColor: bgColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#fff',
+                            font: { size: 16 }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        backgroundColor: '#222',
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#fff' },
+                        ticks: { color: '#fff', font: { size: 15 } }
+                    },
+                    y: {
+                        grid: { color: '#fff' },
+                        ticks: { color: '#fff', font: { size: 15 } }
+                    }
+                }
+            }
+        };
+        if (chartData.type === 'scatter') {
+            config = {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: chartData.dataset_label || '',
+                        data: chartData.data,
+                        backgroundColor: bgColors,
+                        borderColor: borderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: config.options
+            };
+        }
+        new Chart(ctx, config);
+    }
+})();
+</script>
+{% endblock %} 

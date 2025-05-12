@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Login - InsightHub{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card p-4 shadow" style="min-width:340px;max-width:380px;margin:auto;">
+        <div class="text-center mb-4">
+            <i class='bx bx-log-in' style="font-size:2.2rem;"></i>
+            <h2 class="mb-0" style="font-weight:bold;">Login</h2>
+        </div>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="id_username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="id_username" name="username" required autofocus value="{{ form.username.value|default:'' }}">
+            </div>
+            <div class="mb-3">
+                <label for="id_password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="id_password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mb-2">
+                <i class='bx bx-log-in'></i> Login
+            </button>
+        </form>
+        <div class="text-center mt-2" style="font-size:0.97em;color:#aaa;">
+            Don't have an account?
+            <a href="{% url 'register' %}" style="color:#3b82f6;font-weight:500;">Register now</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

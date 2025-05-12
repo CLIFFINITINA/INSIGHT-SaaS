@@ -1,0 +1,95 @@
+body, * {
+    color: #fff !important;
+    font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body, .module, .grp-module, .grp-group, .grp-row, .grp-changelist, .grp-changelist-results, .grp-table, .grp-table th, .grp-table td, .dashboard-module, .app-core.module, .app-auth.module, .grp-table tr, table tr {
+    background: #181818 !important;
+    color: #fff !important;
+}
+.module caption, .grp-changelist .grp-changelist-actions, .grp-changelist .grp-changelist-filter, .grp-changelist .grp-changelist-search, .dashboard-module, .app-core.module, .app-auth.module, .module h2, .grp-changelist .grp-changelist-results thead th {
+    background: #222 !important;
+    color: #fff !important;
+    border: none !important;
+}
+.grp-table th, .grp-table td, table th, table td {
+    border: 1px solid #333 !important;
+}
+.grp-table tr:nth-child(even), table tr:nth-child(even) {
+    background: #222 !important;
+}
+a, a:visited {
+    color: #fff !important;
+}
+a:hover {
+    color: #ffd700 !important;
+}
+button, input[type="submit"], .button, .grp-button, .logout, .theme-toggle, .user-tools a, .user-tools input[type="submit"] {
+    background: #222 !important;
+    color: #fff !important;
+    border: 1px solid #444 !important;
+    border-radius: 4px !important;
+    padding: 6px 16px !important;
+    margin: 2px !important;
+    font-size: 15px !important;
+    transition: background 0.2s !important;
+}
+button:hover, input[type="submit"]:hover, .button:hover, .grp-button:hover, .logout:hover, .theme-toggle:hover, .user-tools a:hover {
+    background: #444 !important;
+    color: #fff !important;
+}
+input, select, textarea {
+    border: 1px solid #444 !important;
+    border-radius: 3px !important;
+    padding: 6px 10px !important;
+    font-size: 15px !important;
+    background: #181818 !important;
+    color: #fff !important;
+}
+label {
+    font-weight: bold !important;
+    color: #fff !important;
+}
+#branding h1, .grp-branding h1 {
+    display: none !important;
+}
+#content, .grp-content {
+    padding: 24px 0 0 0 !important;
+}
+/* Recent actions 区域也黑色 */
+#recent-actions-module, .dashboard-module {
+    background: #181818 !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+#header, .grp-header, .grp-module caption, .grp-changelist .grp-changelist-actions, .grp-changelist .grp-changelist-filter, .grp-changelist .grp-changelist-search {
+    background: #222 !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+#user-tools, .user-tools {
+    background: #181818 !important;
+    color: #fff !important;
+}
+
+/* 让整体更紧凑 */
+#content, .grp-content {
+    padding: 24px 0 0 0 !important;
+}
+
+/* 让表单更美观 */
+input, select, textarea {
+    border: 1px solid #ccc !important;
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-size: 15px;
+    background: #fff !important;
+    color: #222 !important;
+}
+
+/* 让表单label更清晰 */
+label {
+    font-weight: bold;
+    color: #222 !important;
+} 

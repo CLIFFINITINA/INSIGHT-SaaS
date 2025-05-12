@@ -1,0 +1,333 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ dataset.name }} - InsightHub{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class='bx bx-info-circle'></i> Dataset Info
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li style="font-size:1.25rem;font-weight:bold;"><i class='bx bx-table'></i> {{ dataset.name }}</li>
+                        <li><b>Uploaded By:</b> {{ dataset.user.username }}</li>
+                        <li><b>Uploaded At:</b> {{ dataset.uploaded_at|date:'Y-m-d H:i' }}</li>
+                        <li><b>File Size:</b> {{ dataset.file.size }} bytes</li>
+                        <li><b>Fields:</b> {{ dataset.schema|length }}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class='bx bx-cog'></i> Chart Config
+                </div>
+                <div class="card-body">
+                    <form id="chart-config-form">
+                        <div class="form-group mb-2">
+                            <label for="chart_type">Chart Type</label>
+                            <select class="form-control" id="chart_type" name="chart_type"></select>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="x_field">X Axis</label>
+                            <select class="form-control" id="x_field" name="x_field"></select>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="y_field">Y Axis</label>
+                            <select class="form-control" id="y_field" name="y_field"></select>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'qr_dataset' dataset.id %}" class="btn btn-outline-info" target="_blank">
+                            <i class='bx bx-qr'></i> QR Code
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <!-- AI分析结果横条卡片 -->
+            <div class="card mb-3" style="min-height: 64px; display: flex; align-items: center;">
+                <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center" id="ai-analysis-bar" style="width: 100%;">
+                    <div class="spinner-border loading-spinner me-2" role="status" id="ai-analysis-loading">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span id="ai-analysis-content" style="font-size: 1.08em;"></span>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <i class='bx bx-line-chart'></i> Data Visualization
+                </div>
+                <div class="card-body">
+                    <div id="chart-container" class="chart-container" style="height: 420px;">
+                        <div class="text-center">
+                            <div class="spinner-border loading-spinner" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 mb-0">Generating chart...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- AI归纳分析summary卡片，移动到图表下方 -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <i class='bx bx-brain'></i> AI Analysis Result
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center" style="min-height: 100px;">
+                    <div id="ai-summary-loading" class="text-center">
+                        <div class="spinner-border loading-spinner" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="mt-2" style="font-size:1.1rem;color:var(--text-secondary);">AI is summarizing the CSV...</div>
+                    </div>
+                    <div id="ai-summary-content" style="display:none;font-size:1.08rem;color:var(--text-secondary);"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/patternomaly@1.3.2/dist/patternomaly.min.js"></script>
+<script>
+let chartTypeOptions = [
+    {value: 'bar', label: 'Bar'},
+    {value: 'line', label: 'Line'},
+    {value: 'pie', label: 'Pie'}
+];
+// 色盲友好色板
+const colorPalette = [
+    '#377eb8', '#e41a1c', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'
+];
+const patternTypes = [
+    'diagonal', 'dot', 'line', 'dash', 'zigzag', 'cross', 'weave', 'grid', 'triangle'
+];
+
+function getPatternOrColor(idx) {
+    // 只返回纯色，不用 patternomaly
+    return colorPalette[idx % colorPalette.length];
+}
+
+function updateConfigOptions(data) {
+    // 填充类型
+    const chartTypeSel = document.getElementById('chart_type');
+    chartTypeSel.innerHTML = '';
+    chartTypeOptions.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label + (data.ai_chart_type === opt.value ? ' (AI Recommended)' : '');
+        if (data.chart_type === opt.value) option.selected = true;
+        chartTypeSel.appendChild(option);
+    });
+    // 填充X/Y列
+    const xSel = document.getElementById('x_field');
+    const ySel = document.getElementById('y_field');
+    xSel.innerHTML = '';
+    ySel.innerHTML = '';
+    (data.all_fields || []).forEach(col => {
+        const xOpt = document.createElement('option');
+        xOpt.value = col;
+        xOpt.textContent = col + (data.ai_x_field === col ? ' (AI Recommended)' : '');
+        if (data.x_field === col) xOpt.selected = true;
+        xSel.appendChild(xOpt);
+        const yOpt = document.createElement('option');
+        yOpt.value = col;
+        yOpt.textContent = col + (data.ai_y_field === col ? ' (AI Recommended)' : '');
+        if (data.y_field === col) yOpt.selected = true;
+        ySel.appendChild(yOpt);
+    });
+    // 渲染后自动恢复localStorage选择
+    const lastX = localStorage.getItem('last_x_field_{{ dataset.id }}');
+    const lastY = localStorage.getItem('last_y_field_{{ dataset.id }}');
+    if (lastX) {
+        const xField = document.getElementById('x_field');
+        if (xField) xField.value = lastX;
+    }
+    if (lastY) {
+        const yField = document.getElementById('y_field');
+        if (yField) yField.value = lastY;
+    }
+}
+
+function fetchAndRender(config) {
+    let url = `/datasets/{{ dataset.id }}/api/?chart_type=${encodeURIComponent(config.chart_type)}&x_field=${encodeURIComponent(config.x_field)}&y_field=${encodeURIComponent(config.y_field)}`;
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            updateConfigOptions(data);
+            // 更新AI分析结果（只用AI推荐字段）
+            const aiAnalysisBar = document.getElementById('ai-analysis-bar');
+            const aiAnalysisContent = document.getElementById('ai-analysis-content');
+            const aiAnalysisLoading = document.getElementById('ai-analysis-loading');
+            if (data.ai_reason) {
+                aiAnalysisLoading.style.display = 'none';
+                aiAnalysisContent.innerHTML = `
+                    <span class="me-3"><b>Recommended Type:</b> <span class="badge bg-primary">${data.ai_chart_type || 'bar'}</span></span>
+                    <span class="me-3"><b>X:</b> <span class="badge bg-primary">${data.ai_x_field || ''}</span></span>
+                    <span class="me-3"><b>Y:</b> <span class="badge bg-primary">${data.ai_y_field || ''}</span></span>
+                    <span class="me-3"><b>Reason:</b> <span style="color:var(--text-secondary)">${data.ai_reason}</span></span>
+                `;
+            } else {
+                aiAnalysisLoading.style.display = '';
+                aiAnalysisContent.innerHTML = '<span class="text-muted">No AI analysis result</span>';
+            }
+            // 更新图表
+            const chartContainer = document.getElementById('chart-container');
+            if (data.chart_error) {
+                chartContainer.innerHTML = `
+                    <div class="alert alert-warning mb-0">
+                        <i class='bx bx-error'></i> ${data.chart_error}
+                    </div>
+                `;
+            } else if (data.chart_data) {
+                const ctx = document.createElement('canvas');
+                chartContainer.innerHTML = '';
+                chartContainer.appendChild(ctx);
+                let chartConfig;
+                // 多色/多pattern填充
+                let bgColors = [];
+                let borderColors = [];
+                if (Array.isArray(data.chart_data.data)) {
+                    for (let i = 0; i < data.chart_data.data.length; i++) {
+                        bgColors.push(getPatternOrColor(i));
+                        borderColors.push(colorPalette[i % colorPalette.length]);
+                    }
+                }
+                if (data.chart_data.type === 'scatter') {
+                    chartConfig = {
+                        type: 'scatter',
+                        data: {
+                            datasets: [{
+                                label: String(data.chart_data.dataset_label || ''),
+                                data: data.chart_data.data,
+                                backgroundColor: bgColors,
+                                borderColor: borderColors,
+                                borderWidth: 1
+                            }]
+                        }
+                    };
+                } else {
+                    chartConfig = {
+                        type: data.chart_data.type,
+                        data: {
+                            labels: data.chart_data.labels,
+                            datasets: [{
+                                label: String(data.chart_data.dataset_label || ''),
+                                data: data.chart_data.data,
+                                backgroundColor: bgColors,
+                                borderColor: borderColors,
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: '#ffffff'
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)'
+                                    },
+                                    ticks: {
+                                        color: '#ffffff'
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)'
+                                    },
+                                    ticks: {
+                                        color: '#ffffff'
+                                    }
+                                }
+                            }
+                        }
+                    };
+                }
+                new Chart(ctx, chartConfig);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('ai-analysis').innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <i class='bx bx-error'></i> Error loading data
+                </div>
+            `;
+            document.getElementById('chart-container').innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <i class='bx bx-error'></i> Error loading data
+                </div>
+            `;
+        });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 只在初次加载时恢复
+    const lastX = localStorage.getItem('last_x_field_{{ dataset.id }}');
+    const lastY = localStorage.getItem('last_y_field_{{ dataset.id }}');
+    const xField = document.getElementById('x_field');
+    const yField = document.getElementById('y_field');
+    if (xField && lastX) xField.value = lastX;
+    if (yField && lastY) yField.value = lastY;
+
+    // 页面初次加载时自动请求一次，填充下拉框和图表
+    let initialChartType = '{{ chart_type }}';
+    let initialX = lastX || '{{ x_field }}';
+    let initialY = lastY || '{{ y_field }}';
+    fetchAndRender({
+        chart_type: initialChartType,
+        x_field: initialX,
+        y_field: initialY
+    });
+
+    // 监听选择变化
+    document.getElementById('chart-config-form').addEventListener('change', function() {
+        let chart_type = document.getElementById('chart_type').value;
+        let x_field = document.getElementById('x_field').value;
+        let y_field = document.getElementById('y_field').value;
+        // 保存到localStorage
+        localStorage.setItem('last_x_field_{{ dataset.id }}', x_field);
+        localStorage.setItem('last_y_field_{{ dataset.id }}', y_field);
+        // 直接用当前值请求
+        fetchAndRender({chart_type, x_field, y_field});
+        // 新增：保存到后端
+        fetch(`/datasets/{{ dataset.id }}/save_chart_config/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({chart_type, x_field, y_field})
+        });
+    });
+    // 新增：AI summary异步加载
+    fetch('/datasets/{{ dataset.id }}/ai_summary/')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('ai-summary-loading').style.display = 'none';
+            const content = document.getElementById('ai-summary-content');
+            content.style.display = '';
+            content.textContent = data.summary;
+        })
+        .catch(() => {
+            document.getElementById('ai-summary-loading').style.display = 'none';
+            const content = document.getElementById('ai-summary-content');
+            content.style.display = '';
+            content.textContent = 'AI summary failed.';
+        });
+});
+</script>
+{% endblock %} 

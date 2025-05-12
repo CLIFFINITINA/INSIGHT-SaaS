@@ -1,0 +1,131 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">My Dashboard</h2>
+            <p class="text-muted mb-0">Create and manage your data visualization dashboard</p>
+        </div>
+        <a href="{% url 'create_dashboard' %}" class="btn btn-primary">
+            <i class='bx bx-plus'></i> Create Dashboard
+        </a>
+    </div>
+    
+    <div class="row g-4">
+        {% for dashboard in dashboards %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 dashboard-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="card-title mb-1">{{ dashboard.name }}</h5>
+                            <p class="card-text text-muted small mb-0">
+                                <i class='bx bx-user'></i> Created by: {{ dashboard.user.username }}
+                            </p>
+                            <p class="card-text text-muted small mb-0">
+                                <i class='bx bx-time'></i> {{ dashboard.created_at|date:'Y-m-d H:i' }}
+                            </p>
+                        </div>
+                        {% if dashboard.is_public %}
+                        <span class="badge bg-success">
+                            <i class='bx bx-globe'></i> Public
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">
+                            <i class='bx bx-lock-alt'></i> Private
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <p class="card-text">{{ dashboard.description|truncatechars:100 }}</p>
+                    
+                    <div class="dashboard-stats mb-3">
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <div class="stat-item">
+                                    <i class='bx bx-bar-chart-alt-2'></i>
+                                    <span>{{ dashboard.chart_set.count }} Charts</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'dashboard_detail' dashboard.id %}" class="btn btn-primary btn-sm flex-grow-1">
+                            <i class='bx bx-show'></i> View
+                        </a>
+                        <a href="{% url 'edit_dashboard' dashboard.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class='bx bx-edit'></i> Edit
+                        </a>
+                        <a href="{% url 'delete_dashboard' dashboard.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this dashboard? This action cannot be undone.')">
+                            <i class='bx bx-trash'></i> Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class='bx bx-layout display-1 text-muted mb-3'></i>
+                <h3 class="mb-3">No Dashboard Found</h3>
+                <p class="text-muted mb-4">Create your first dashboard to start your data visualization journey</p>
+                <a href="{% url 'create_dashboard' %}" class="btn btn-primary btn-lg">
+                    <i class='bx bx-plus'></i> Create Dashboard
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.dashboard-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--border-color);
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-stats {
+    background-color: var(--highlight-bg);
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.stat-item i {
+    font-size: 1.2rem;
+}
+
+.badge {
+    padding: 0.5em 0.75em;
+    font-weight: 500;
+}
+
+.badge i {
+    font-size: 0.9em;
+    margin-right: 0.25em;
+}
+
+.dashboard-card .card-text,
+.dashboard-card .text-muted,
+.dashboard-card .small {
+    color: #b0b3b8 !important;
+}
+.dashboard-card .card-title {
+    color: #fff !important;
+}
+</style>
+{% endblock %} 

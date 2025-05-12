@@ -1,0 +1,190 @@
+{% extends 'core/base.html' %}
+{% load i18n %}
+
+{% block title %}Dataset List - InsightHub{% endblock %}
+
+{% block content %}
+<form id="batch-delete-form" method="post" action="{% url 'batch_delete_datasets' %}">
+    {% csrf_token %}
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="mb-4">
+                <i class='bx bx-data'></i> Dataset List
+            </h2>
+        </div>
+        <div class="col text-end">
+            <a href="{% url 'upload' %}" class="btn btn-primary">
+                <i class='bx bx-upload'></i> Upload New Dataset
+            </a>
+            <button type="button" class="btn btn-dark ms-2" id="batch-delete-btn">
+                <i class='bx bx-trash'></i> Batch Delete
+            </button>
+        </div>
+    </div>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for dataset in datasets %}
+        <div class="col">
+            <div class="card dataset-card h-100 position-relative">
+                <button type="button" class="btn btn-sm btn-outline-secondary dataset-rename-btn" data-id="{{ dataset.id }}" style="position:absolute;top:10px;right:48px;z-index:3;">
+                    <i class='bx bx-pencil'></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger dataset-delete-btn" data-id="{{ dataset.id }}" style="position:absolute;top:10px;right:10px;z-index:3;display:block;">
+                    <i class='bx bx-trash'></i>
+                </button>
+                <div class="card-body">
+                    <div class="form-check batch-checkbox-wrap" style="display:none;position:absolute;left:10px;top:14px;z-index:2;">
+                        <input class="form-check-input batch-checkbox" type="checkbox" name="dataset_ids" value="{{ dataset.id }}" id="ds-{{ dataset.id }}" style="margin:0;transform:scale(1.2);">
+                    </div>
+                    <h5 class="card-title dataset-title" style="padding-left:2.2em;min-height:1.8em;display:flex;align-items:center;">
+                        <i class='bx bx-table'></i> {{ dataset.name }}
+                    </h5>
+                    <div class="dataset-info mb-3">
+                        <p class="mb-1">
+                            <i class='bx bx-calendar'></i> Uploaded At: {{ dataset.uploaded_at|date:"Y-m-d H:i" }}
+                        </p>
+                        <p class="mb-1">
+                            <i class='bx bx-user'></i> Uploaded By: {{ dataset.user.username }}
+                        </p>
+                        <p class="mb-0">
+                            <i class='bx bx-file'></i> File Size: {{ dataset.file.size|filesizeformat }}
+                        </p>
+                    </div>
+                    <a href="{% url 'dataset_detail' dataset.id %}" class="btn btn-primary w-100">
+                        <i class='bx bx-line-chart'></i> View Analysis
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class='bx bx-info-circle'></i> No datasets available. Please upload data first.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const batchBtn = document.getElementById('batch-delete-btn');
+    const form = document.getElementById('batch-delete-form');
+    let batchMode = false;
+    batchBtn.addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.batch-checkbox-wrap');
+        if (!batchMode) {
+            // 进入批量模式
+            batchMode = true;
+            batchBtn.classList.remove('btn-dark');
+            batchBtn.classList.add('btn-danger');
+            batchBtn.innerHTML = "<i class='bx bx-trash'></i> 完成删除";
+            checkboxes.forEach(cb => cb.style.display = 'block');
+        } else {
+            // 检查是否有选中
+            const checked = document.querySelectorAll('.batch-checkbox:checked');
+            if (checked.length === 0) {
+                // 退出批量模式，不弹窗
+                batchMode = false;
+                batchBtn.classList.remove('btn-danger');
+                batchBtn.classList.add('btn-dark');
+                batchBtn.innerHTML = "<i class='bx bx-trash'></i> Batch Delete";
+                checkboxes.forEach(cb => cb.style.display = 'none');
+                return;
+            }
+            // 提交表单
+            form.submit();
+            // 提交后自动恢复（页面刷新）
+        }
+    });
+    // 页面刷新后自动恢复
+    window.addEventListener('pageshow', function() {
+        batchMode = false;
+        batchBtn.classList.remove('btn-danger');
+        batchBtn.classList.add('btn-dark');
+        batchBtn.innerHTML = "<i class='bx bx-trash'></i> Batch Delete";
+        document.querySelectorAll('.batch-checkbox-wrap').forEach(cb => cb.style.display = 'none');
+    });
+    // 单个删除按钮逻辑
+    document.querySelectorAll('.dataset-delete-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const datasetId = btn.getAttribute('data-id');
+            if (confirm('确定要删除该数据集吗？')) {
+                // 创建并提交一个form
+                const singleForm = document.createElement('form');
+                singleForm.method = 'post';
+                singleForm.action = `/datasets/batch_delete/`;
+                singleForm.style.display = 'none';
+                // csrf
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = 'csrfmiddlewaretoken';
+                csrf.value = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+                singleForm.appendChild(csrf);
+                // dataset id
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'dataset_ids';
+                idInput.value = datasetId;
+                singleForm.appendChild(idInput);
+                document.body.appendChild(singleForm);
+                singleForm.submit();
+            }
+        });
+    });
+    // 编辑名称按钮逻辑
+    document.querySelectorAll('.dataset-rename-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const datasetId = btn.getAttribute('data-id');
+            const card = btn.closest('.card');
+            const title = card.querySelector('.dataset-title');
+            const oldName = title.textContent.trim().replace(/^\s*\S+\s*/, '');
+            // 创建输入框
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = oldName;
+            input.className = 'form-control form-control-sm';
+            input.style.maxWidth = '180px';
+            input.style.display = 'inline-block';
+            input.style.marginLeft = '0.5em';
+            // 替换标题内容
+            title.innerHTML = "<i class='bx bx-table'></i> ";
+            title.appendChild(input);
+            input.focus();
+            // 提交逻辑
+            function submitRename() {
+                const newName = input.value.trim();
+                if (!newName || newName === oldName) {
+                    title.innerHTML = `<i class='bx bx-table'></i> ${oldName}`;
+                    return;
+                }
+                // 发送AJAX请求
+                fetch(`/datasets/rename/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+                    },
+                    body: JSON.stringify({id: datasetId, name: newName})
+                }).then(res => res.json()).then(data => {
+                    if (data.success) {
+                        title.innerHTML = `<i class='bx bx-table'></i> ${newName}`;
+                    } else {
+                        alert('重命名失败');
+                        title.innerHTML = `<i class='bx bx-table'></i> ${oldName}`;
+                    }
+                }).catch(() => {
+                    alert('网络错误');
+                    title.innerHTML = `<i class='bx bx-table'></i> ${oldName}`;
+                });
+            }
+            input.addEventListener('blur', submitRename);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    submitRename();
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 

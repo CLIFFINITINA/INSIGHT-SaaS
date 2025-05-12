@@ -1,0 +1,153 @@
+{% extends 'core/base.html' %}
+{% block title %}Public Dashboard - {{ dashboard.name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="dashboard-header mb-4" style="position:relative;">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <h2 class="mb-0" id="dashboard-title">{{ dashboard.name }}</h2>
+                    {% if dashboard.is_public %}
+                    <span class="badge bg-success">
+                        <i class='bx bx-globe'></i> Public
+                    </span>
+                    {% endif %}
+                </div>
+                <p class="text-muted mb-0" id="dashboard-desc">{{ dashboard.description }}</p>
+                <p class="text-muted mb-0">
+                    <i class='bx bx-user'></i> Created by: {{ dashboard.user.username }}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="row" id="chart-list">
+        {% for chart in charts %}
+        <div class="chart-item" data-chart-id="{{ chart.id }}">
+            <div class="card h-100 resizable-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3 header-row">
+                        <h5 class="card-title mb-0">{{ chart.name }}</h5>
+                    </div>
+                    <p class="card-text text-muted small mb-3">{{ chart.description|truncatechars:100 }}</p>
+                    <div class="chart-container" style="position: relative; height:250px;">
+                        <canvas id="chart-{{ chart.id }}"></canvas>
+                        <div id="chart-error-{{ chart.id }}" class="alert alert-warning mt-2 d-none"></div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class='bx bx-data'></i> Data Source:
+                            {{ chart.dataset.name }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class='bx bx-bar-chart-alt-2 display-1 text-muted mb-3'></i>
+                <h3 class="mb-3">No Chart Yet</h3>
+                <p class="text-muted mb-4">Add your first chart to start data visualization</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function() {
+    const chartConfigs = [
+        {% for chart in charts %}
+        {
+            id: "{{ chart.id }}",
+            datasetId: "{{ chart.dataset.id }}",
+            chartType: "{{ chart.chart_type }}",
+            xColumn: "{{ chart.x_column }}",
+            yColumn: "{{ chart.y_column }}",
+            name: "{{ chart.name }}"
+        },
+        {% endfor %}
+    ];
+    chartConfigs.forEach(cfg => {
+        fetch(`/datasets/${cfg.datasetId}/api/?chart_type=${cfg.chartType}&x_field=${cfg.xColumn}&y_field=${cfg.yColumn}`)
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('chart-' + cfg.id).getContext('2d');
+                const errorDiv = document.getElementById('chart-error-' + cfg.id);
+                if (data.chart_error) {
+                    errorDiv.textContent = data.chart_error;
+                    errorDiv.classList.remove('d-none');
+                    return;
+                }
+                if (!data.chart_data || !Array.isArray(data.chart_data.data)) {
+                    errorDiv.textContent = 'Invalid chart data format';
+                    errorDiv.classList.remove('d-none');
+                    return;
+                }
+                let bgColors = [];
+                let borderColors = [];
+                const colorPalette = [
+                    '#377eb8', '#e41a1c', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'
+                ];
+                for (let i = 0; i < data.chart_data.data.length; i++) {
+                    bgColors.push(colorPalette[i % colorPalette.length]);
+                    borderColors.push(colorPalette[i % colorPalette.length]);
+                }
+                new Chart(ctx, {
+                    type: cfg.chartType,
+                    data: {
+                        labels: data.chart_data.labels,
+                        datasets: [{
+                            label: cfg.name,
+                            data: data.chart_data.data,
+                            backgroundColor: bgColors,
+                            borderColor: borderColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#fff',
+                                    font: { size: 16 }
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                backgroundColor: '#222',
+                                borderColor: '#fff',
+                                borderWidth: 1
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: '#fff' },
+                                ticks: { color: '#fff', font: { size: 15 } }
+                            },
+                            y: {
+                                grid: { color: '#fff' },
+                                ticks: { color: '#fff', font: { size: 15 } }
+                            }
+                        }
+                    }
+                });
+                errorDiv.classList.add('d-none');
+            })
+            .catch(error => {
+                const errorDiv = document.getElementById('chart-error-' + cfg.id);
+                errorDiv.textContent = 'Chart data loading failed: ' + error.message;
+                errorDiv.classList.remove('d-none');
+            });
+    });
+})();
+</script>
+{% endblock %} 

@@ -1,0 +1,317 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}InsightHub - Smart Data Analytics Platform{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-bg: #18191a;
+            --secondary-bg: #232425;
+            --accent-color: #444444;
+            --text-primary: #f5f5f5;
+            --text-secondary: #b0b3b8;
+            --border-color: #333436;
+            --highlight-bg: #222324;
+            --badge-bg: #333;
+            --badge-text: #fff;
+        }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        .navbar {
+            background-color: var(--secondary-bg) !important;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            color: var(--text-primary) !important;
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+
+        .nav-link {
+            color: var(--text-secondary) !important;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary) !important;
+        }
+
+        .card {
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header {
+            background-color: var(--highlight-bg);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            color: #fff;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: #222;
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .form-control {
+            background-color: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .form-control:focus {
+            background-color: var(--primary-bg);
+            border-color: var(--accent-color);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 0.2rem rgba(80, 80, 80, 0.15);
+        }
+
+        /* 新增：select/option/input/textarea 深色模式适配，防止黑字黑底 */
+        select, input, textarea {
+            background-color: var(--primary-bg) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        select:focus, input:focus, textarea:focus {
+            background-color: var(--primary-bg) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--accent-color) !important;
+            outline: none !important;
+        }
+        option {
+            background-color: var(--secondary-bg) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .table {
+            color: var(--text-primary);
+        }
+
+        .table thead th {
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .table td {
+            border-top: 1px solid var(--border-color);
+        }
+
+        .loading-spinner {
+            color: var(--accent-color);
+        }
+
+        .chart-container {
+            background-color: var(--secondary-bg);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        .ai-analysis {
+            background-color: var(--highlight-bg);
+            border-left: 4px solid var(--border-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .dataset-card {
+            transition: transform 0.2s;
+        }
+
+        .dataset-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .dataset-info {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .dataset-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert {
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .alert-danger {
+            border-left: 4px solid #a94442;
+        }
+
+        .alert-success {
+            border-left: 4px solid #4caf50;
+        }
+
+        .badge.bg-primary, .badge.bg-primary:visited, .badge.bg-primary:active {
+            background-color: var(--badge-bg) !important;
+            color: var(--badge-text) !important;
+            font-weight: 600;
+            font-size: 1em;
+            border-radius: 4px;
+            padding: 0.25em 0.7em;
+        }
+
+        h2, h4, h5, h6 {
+            color: var(--text-primary);
+        }
+        
+        .card-header, .ai-analysis h6, .ai-analysis p, .ai-analysis div {
+            color: var(--text-primary) !important;
+        }
+        .ai-analysis {
+            font-size: 1.08em;
+        }
+        .ai-analysis h6 {
+            font-weight: bold;
+            margin-bottom: 0.3em;
+        }
+        .ai-analysis p {
+            color: var(--text-secondary) !important;
+        }
+        /* 卡片内容、列表、加粗字体全局白色，防止黑字 */
+        .card-body, .list-unstyled, .list-unstyled li, .card-body b {
+            color: var(--text-primary) !important;
+        }
+
+        .navbar-nav {
+            align-items: center;
+            gap: 18px;
+        }
+        .navbar .nav-link, .navbar .btn-link {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0 10px;
+            height: 40px;
+        }
+        .navbar .nav-item form {
+            display: flex;
+            align-items: center;
+            margin: 0;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <i class='bx bx-line-chart me-2'></i>
+                <span style="font-weight:600;">InsightHub</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'upload' %}">
+                                <i class='bx bx-upload'></i> Upload Data
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'datasets' %}">
+                                <i class='bx bx-data'></i> Datasets
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'dashboard_list' %}">
+                                <i class='bx bx-layout'></i> Dashboards
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <form id="logout-form" action="{% url 'logout' %}" method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link btn btn-link" style="padding:0;margin:0;color:inherit;background:none;border:none;">
+                                    <i class='bx bx-log-out'></i> Logout
+                                </button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <i class='bx bx-log-in'></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register' %}">
+                                <i class='bx bx-user-plus'></i> Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+                {% if user.is_authenticated %}
+                    <span class="navbar-text ms-3" style="color:var(--text-secondary);font-weight:500;">
+                        <i class='bx bx-user'></i> {{ user.username }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    window.colorPalette = window.colorPalette || [
+        '#377eb8', '#e41a1c', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'
+    ];
+    window.patternTypes = window.patternTypes || [
+        'diagonal', 'dot', 'line', 'dash', 'zigzag', 'cross', 'weave', 'grid', 'triangle'
+    ];
+    window.getPatternOrColor = window.getPatternOrColor || function(idx) {
+        if (window.pattern && window.patternTypes[idx % window.patternTypes.length]) {
+            return pattern.draw(window.patternTypes[idx % window.patternTypes.length], window.colorPalette[idx % window.colorPalette.length]);
+        }
+        return window.colorPalette[idx % window.colorPalette.length];
+    };
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

@@ -1,0 +1,21 @@
+{% extends 'core/base.html' %}
+{% block title %}Dashboard QR - {{ dashboard.name }}{% endblock %}
+{% block content %}
+<div class="container d-flex flex-column align-items-center justify-content-center" style="min-height:70vh;">
+    <div class="card p-4 shadow" style="max-width:420px;width:100%;">
+        <h2 class="mb-3 text-center">Dashboard QR</h2>
+        <div class="text-center mb-3">
+            <img src="{{ qr_img_base64 }}" alt="QR Code" style="width:180px;height:180px;"/>
+        </div>
+        <div class="mb-3 text-center">
+            <b>{{ dashboard.name }}</b><br>
+            <span class="text-secondary">Created by: {{ dashboard.user.username }}</span><br>
+            <span class="text-secondary">Created at: {{ dashboard.created_at|date:'Y-m-d H:i' }}</span>
+        </div>
+        <div class="mb-2">
+            <b>Direct Link:</b><br>
+            <a href="{{ url }}" style="word-break:break-all;">{{ url }}</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

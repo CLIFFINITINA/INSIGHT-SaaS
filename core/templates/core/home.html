@@ -1,0 +1,90 @@
+{% extends 'core/base.html' %}
+{% block title %}InsightHub - Data Intelligence Platform{% endblock %}
+{% block content %}
+<style>
+.home-main {
+  color: #fff;
+}
+.home-main .brand-title {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #3b82f6;
+}
+.home-main .brand-slogan {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+}
+.home-main .brand-desc {
+  color: #ccc;
+  font-size: 1.2rem;
+}
+.home-main .feature-btn {
+  border: 2px solid #fff;
+  background: transparent;
+  color: #fff;
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: none;
+}
+.home-main .feature-btn:hover {
+  background: #fff;
+  color: #18191a;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  text-decoration: none;
+}
+.home-main .feature-btn .card-body {
+  color: inherit;
+}
+.home-main .feature-btn .card-body h5,
+.home-main .feature-btn .card-body h6 {
+  color: inherit;
+  font-weight: 600;
+}
+</style>
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-dark home-main" style="min-height:100vh;">
+  <div class="row w-100" style="max-width:1100px;">
+    <!-- Left: Brand and Slogan -->
+    <div class="col-md-6 d-flex flex-column justify-content-center align-items-start p-5">
+      <div class="mb-4">
+        <span class="brand-title">
+          <i class='bx bx-line-chart'></i> InsightHub
+        </span>
+      </div>
+      <h2 class="mb-3 brand-slogan">Data Insights Start Here</h2>
+      <p class="brand-desc mb-4">All-in-one data visualization and sharing platform. AI-powered analytics, QR code preview, permission management and more.</p>
+      {% if not request.user.is_authenticated %}
+        <a href="/register/" class="btn btn-primary btn-lg px-5 mt-2 me-3">Register</a>
+        <a href="/login/" class="btn btn-outline-light btn-lg px-5 mt-2">Login</a>
+      {% endif %}
+    </div>
+    <!-- Right: Feature Cards -->
+    <div class="col-md-6 d-flex flex-column justify-content-center align-items-center p-5">
+      {% if request.user.is_authenticated %}
+      <div class="d-flex flex-column w-100 align-items-center">
+        <a href="/upload/" class="card feature-btn w-100 text-center text-decoration-none mb-4">
+          <div class="card-body py-4">
+            <i class='bx bx-upload' style="font-size:2.5rem;"></i>
+            <h5 class="mt-2">Upload Data</h5>
+            <p class="small">Support CSV files, auto schema detection & AI analysis</p>
+          </div>
+        </a>
+        <a href="/datasets/" class="card feature-btn w-100 text-center text-decoration-none mb-4">
+          <div class="card-body py-4">
+            <i class='bx bx-table' style="font-size:2rem;"></i>
+            <h6 class="mt-2">Datasets</h6>
+          </div>
+        </a>
+        <a href="/dashboards/" class="card feature-btn w-100 text-center text-decoration-none">
+          <div class="card-body py-4">
+            <i class='bx bx-layout' style="font-size:2rem;"></i>
+            <h6 class="mt-2">Dashboards</h6>
+          </div>
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %} 

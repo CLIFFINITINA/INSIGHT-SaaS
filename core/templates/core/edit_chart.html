@@ -1,0 +1,73 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">编辑图表</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="name">名称</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ chart.name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataset">数据集</label>
+                            <select class="form-control" id="dataset" name="dataset" required>
+                                {% for dataset in datasets %}
+                                <option value="{{ dataset.id }}" {% if dataset.id == chart.dataset.id %}selected{% endif %}>{{ dataset.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="chart_type">图表类型</label>
+                            <select class="form-control" id="chart_type" name="chart_type" required>
+                                {% if ai_type %}
+                                <option value="{{ ai_type }}" {% if chart.chart_type == ai_type %}selected{% endif %}>{{ ai_type|title }}（AI推荐）</option>
+                                {% endif %}
+                                <option value="bar" {% if chart.chart_type == 'bar' and ai_type != 'bar' %}selected{% endif %}>柱状图</option>
+                                <option value="line" {% if chart.chart_type == 'line' and ai_type != 'line' %}selected{% endif %}>折线图</option>
+                                <option value="pie" {% if chart.chart_type == 'pie' and ai_type != 'pie' %}selected{% endif %}>饼图</option>
+                                <option value="histogram" {% if chart.chart_type == 'histogram' and ai_type != 'histogram' %}selected{% endif %}>直方图</option>
+                                <option value="box" {% if chart.chart_type == 'box' and ai_type != 'box' %}selected{% endif %}>箱型图</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="x_column">X轴列</label>
+                            <select class="form-control" id="x_column" name="x_column" required>
+                                {% if ai_x %}
+                                <option value="{{ ai_x }}" {% if chart.x_column == ai_x %}selected{% endif %}>{{ ai_x }}（AI推荐）</option>
+                                {% endif %}
+                                {% for col in all_fields %}
+                                <option value="{{ col }}" {% if chart.x_column == col and ai_x != col %}selected{% endif %}>{{ col }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="y_column">Y轴列</label>
+                            <select class="form-control" id="y_column" name="y_column" required>
+                                {% if ai_y %}
+                                <option value="{{ ai_y }}" {% if chart.y_column == ai_y %}selected{% endif %}>{{ ai_y }}（AI推荐）</option>
+                                {% endif %}
+                                {% for col in all_fields %}
+                                <option value="{{ col }}" {% if chart.y_column == col and ai_y != col %}selected{% endif %}>{{ col }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">描述</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ chart.description }}</textarea>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">保存</button>
+                            <a href="{% url 'dashboard_detail' chart.dashboard.id %}" class="btn btn-secondary">取消</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

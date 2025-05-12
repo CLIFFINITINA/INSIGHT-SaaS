@@ -1,0 +1,168 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="dashboard-header mb-4">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <h2 class="mb-0">{{ dashboard.name }}</h2>
+                    <span class="badge bg-success">
+                        <i class='bx bx-globe'></i> 公开仪表盘
+                    </span>
+                </div>
+                <p class="text-muted mb-0">{{ dashboard.description }}</p>
+            </div>
+            <div class="text-end">
+                <p class="text-muted small mb-0">
+                    <i class='bx bx-user'></i> 创建者：{{ dashboard.user.username }}
+                </p>
+                <p class="text-muted small mb-0">
+                    <i class='bx bx-time'></i> 创建于：{{ dashboard.created_at|date:'Y-m-d H:i' }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% for chart in charts %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ chart.name }}</h5>
+                    <p class="card-text text-muted small mb-3">{{ chart.description|truncatechars:100 }}</p>
+                    
+                    <div class="chart-container" style="position: relative; height:250px;">
+                        <canvas id="chart-{{ chart.id }}"></canvas>
+                        <div id="chart-error-{{ chart.id }}" class="alert alert-warning mt-2 d-none"></div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class='bx bx-data'></i> 数据来源：{{ chart.dataset.name }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class='bx bx-bar-chart-alt-2 display-1 text-muted mb-3'></i>
+                <h3 class="mb-3">暂无图表</h3>
+                <p class="text-muted">这个仪表盘还没有任何图表</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/patternomaly@1.3.2/dist/patternomaly.min.js"></script>
+<script>
+(function() {
+    {% for chart in charts %}
+    fetch('/datasets/{{ chart.dataset.id }}/api/')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('chart-{{ chart.id }}').getContext('2d');
+            const errorDiv = document.getElementById('chart-error-{{ chart.id }}');
+            
+            if (data.chart_data) {
+                let bgColors = [];
+                let borderColors = [];
+                if (Array.isArray(data.chart_data.data)) {
+                    for (let i = 0; i < data.chart_data.data.length; i++) {
+                        bgColors.push(window.getPatternOrColor(i));
+                        borderColors.push(window.colorPalette[i % window.colorPalette.length]);
+                    }
+                }
+
+                new Chart(ctx, {
+                    type: '{{ chart.chart_type }}',
+                    data: {
+                        labels: data.chart_data.labels,
+                        datasets: [{
+                            label: '{{ chart.name }}',
+                            data: data.chart_data.data,
+                            backgroundColor: bgColors,
+                            borderColor: borderColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: 'var(--text-primary)'
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: 'var(--border-color)'
+                                },
+                                ticks: {
+                                    color: 'var(--text-secondary)'
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    color: 'var(--border-color)'
+                                },
+                                ticks: {
+                                    color: 'var(--text-secondary)'
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                errorDiv.textContent = '无法加载图表数据';
+                errorDiv.classList.remove('d-none');
+            }
+        })
+        .catch(() => {
+            const errorDiv = document.getElementById('chart-error-{{ chart.id }}');
+            errorDiv.textContent = '图表数据加载失败，请检查数据集或网络';
+            errorDiv.classList.remove('d-none');
+        });
+    {% endfor %}
+})();
+</script>
+{% endblock %}
+
+<style>
+.dashboard-header {
+    background-color: var(--secondary-bg);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.chart-container {
+    background-color: var(--highlight-bg);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.badge {
+    padding: 0.5em 0.75em;
+    font-weight: 500;
+}
+
+.badge i {
+    font-size: 0.9em;
+    margin-right: 0.25em;
+}
+</style>
+{% endblock %} 

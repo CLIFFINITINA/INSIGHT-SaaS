@@ -1,0 +1,118 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Create Chart - InsightHub{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card p-4 shadow" style="min-width:340px;max-width:480px;margin:auto;">
+        <div class="text-center mb-4">
+            <i class='bx bx-plus' style="font-size:2.2rem;"></i>
+            <h2 class="mb-0" style="font-weight:bold;">Create Chart</h2>
+        </div>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="id_name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="id_name" name="name" required autofocus value="{{ form.name.value|default:'' }}">
+            </div>
+            <div class="mb-3">
+                <label for="id_dataset" class="form-label">Dataset</label>
+                <select class="form-control" id="id_dataset" name="dataset" required>
+                    <option value="">Select Dataset</option>
+                    {% for ds in datasets %}
+                        <option value="{{ ds.id }}" {% if selected_dataset_id == ds.id %}selected{% endif %}>{{ ds.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if not datasets %}
+            <div class="alert alert-warning mt-3">No dataset found. Please upload a dataset first.</div>
+            {% endif %}
+            <div class="mb-3">
+                <label for="id_chart_type" class="form-label">Chart Type</label>
+                <select class="form-control" id="id_chart_type" name="chart_type" required>
+                    <option value="bar" {% if form.chart_type.value == 'bar' %}selected{% endif %}>Bar</option>
+                    <option value="line" {% if form.chart_type.value == 'line' %}selected{% endif %}>Line</option>
+                    <option value="pie" {% if form.chart_type.value == 'pie' %}selected{% endif %}>Pie</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="id_x_column" class="form-label">X Axis {% if dataset_recommend and form.dataset.value %}(AI Recommended){% endif %}</label>
+                <select class="form-control" id="id_x_column" name="x_column" required>
+                    <option value="">Select X Axis</option>
+                    {% if dataset_recommend and form.dataset.value %}
+                        {% for col in all_fields %}
+                            <option value="{{ col }}" {% if form.x_column.value == col %}selected{% endif %} {% if ai_x == col %}style="color:#3b82f6;"{% endif %}>{{ col }}{% if ai_x == col %} (AI Recommended){% endif %}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="id_y_column" class="form-label">Y Axis {% if dataset_recommend and form.dataset.value %}(AI Recommended){% endif %}</label>
+                <select class="form-control" id="id_y_column" name="y_column" required>
+                    <option value="">Select Y Axis</option>
+                    {% if dataset_recommend and form.dataset.value %}
+                        {% for col in all_fields %}
+                            <option value="{{ col }}" {% if form.y_column.value == col %}selected{% endif %} {% if ai_y == col %}style="color:#3b82f6;"{% endif %}>{{ col }}{% if ai_y == col %} (AI Recommended){% endif %}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="id_description" class="form-label">Description</label>
+                <textarea class="form-control" id="id_description" name="description" rows="3">{{ form.description.value|default:'' }}</textarea>
+            </div>
+            <div class="d-flex justify-content-center mt-4">
+                <button type="submit" class="btn btn-primary me-2">Create</button>
+                <a href="{% url 'dashboard_detail' dashboard.id %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 推荐字典
+    const datasetRecommend = {{ dataset_recommend|safe }};
+    // 构建所有数据集id列表和schema字典
+    const allFieldsMap = {};
+{% for ds in datasets %}
+    allFieldsMap["{{ ds.id }}"] = {{ ds.schema|default:'{}'|safe }};
+{% endfor %}
+
+    const datasetSelect = document.getElementById('id_dataset');
+    const xSelect = document.getElementById('id_x_column');
+    const ySelect = document.getElementById('id_y_column');
+
+    function updateFields(dsId) {
+        xSelect.innerHTML = '<option value="">Select X Axis</option>';
+        ySelect.innerHTML = '<option value="">Select Y Axis</option>';
+        if (!dsId || !allFieldsMap[dsId]) return;
+        const rec = datasetRecommend[dsId] || {};
+        const fields = Object.keys(allFieldsMap[dsId]);
+        fields.forEach(col => {
+            let xOpt = document.createElement('option');
+            xOpt.value = col;
+            xOpt.textContent = col + (rec.x === col ? ' (AI Recommended)' : '');
+            if (rec.x === col) xOpt.style.color = '#3b82f6';
+            xSelect.appendChild(xOpt);
+            let yOpt = document.createElement('option');
+            yOpt.value = col;
+            yOpt.textContent = col + (rec.y === col ? ' (AI Recommended)' : '');
+            if (rec.y === col) yOpt.style.color = '#3b82f6';
+            ySelect.appendChild(yOpt);
+        });
+        // 默认选中推荐
+        if (rec.x) xSelect.value = rec.x;
+        if (rec.y) ySelect.value = rec.y;
+    }
+
+    // 初次加载
+    if (datasetSelect.value) {
+        updateFields(datasetSelect.value);
+    }
+    datasetSelect.addEventListener('change', function() {
+        updateFields(this.value);
+    });
+});
+</script>
+{% endblock %} 
